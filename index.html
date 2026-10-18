@@ -99,6 +99,7 @@
     width: auto; z-index: 100; border-radius: 8px;
   }
   #result { display: none; }
+  #viewMyWishlist { display: none; margin-top: 15px; }
 </style>
 </head>
 <body>
@@ -106,10 +107,10 @@
 <h1>Secret Santa 2025</h1>
 <p class="subtitle">One link for the whole family 🎄</p>
 
-<!-- Draw Section (now first) -->
+<!-- Draw Section -->
 <div class="card" id="draw-section">
   <h2>Draw Your Person</h2>
-  <p>Type your name exactly as it appears below:</p>
+  <p>Type your name exactly as it appears:</p>
   <input type="text" id="nameInput" placeholder="e.g. Grandma Lisa" autocomplete="off">
   <button id="drawBtn">Draw My Person!</button>
   <p class="status"><strong>Names:</strong><br>
@@ -117,18 +118,20 @@
   </p>
 </div>
 
-<!-- Wishlist Prompt (now second) -->
+<!-- Wishlist Section (stays available) -->
 <div class="card" id="wishlist-section">
-  <h2>Add Your Wishlist</h2>
-  <p>Help everyone know what to get you!</p>
+  <h2>Your Wishlist</h2>
+  <p>Add or update your Amazon or GoWish link so people know what to get you.</p>
   <div class="links">
     <a href="https://www.amazon.com/gp/registry/wishlist" target="_blank">Create Amazon Wishlist</a>
     <a href="https://www.gowish.com/" target="_blank">Create GoWish List</a>
   </div>
-  <p style="font-size:0.95em; margin:15px 0 5px;">Paste your Amazon or GoWish link:</p>
-  <input type="url" id="wishlistUrl" placeholder="https://...">
-  <button class="secondary" id="saveWishlistBtn">Save My Wishlist</button>
+  <input type="url" id="wishlistUrl" placeholder="Paste your wishlist link here">
+  <button class="secondary" id="saveWishlistBtn">Save / Update My Wishlist</button>
   <div class="status" id="wishlistStatus"></div>
+  <div id="viewMyWishlist">
+    <a id="viewLink" href="#" target="_blank" style="display:inline-block; margin-top:10px; font-size:1.4em; background:#fff; color:#c62828; padding:12px 20px; border-radius:12px; text-decoration:none; font-weight:bold;">View Your Wishlist →</a>
+  </div>
 </div>
 
 <!-- Result -->
@@ -162,13 +165,31 @@ const family = [
   "Drea","Brandon","Grandma Lisa","Grandma Chris","Roberto","Diego","Nicholas","JJ"
 ];
 
+// Check if user already has a wishlist when they type their name
+document.getElementById("nameInput").addEventListener("blur", async () => {
+  const name = document.getElementById("nameInput").value.trim();
+  const person = family.find(n => n.toLowerCase() === name.toLowerCase());
+  if (!person) return;
+
+  const doc = await db.collection("wishlists").doc(person).get();
+  const viewDiv = document.getElementById("viewMyWishlist");
+  const viewLink = document.getElementById("viewLink");
+  if (doc.exists && doc.data().url) {
+    viewLink.href = doc.data().url;
+    viewDiv.style.display = "block";
+    document.getElementById("wishlistUrl").value = doc.data().url;
+  } else {
+    viewDiv.style.display = "none";
+  }
+});
+
 document.getElementById("saveWishlistBtn").onclick = async () => {
   const name = document.getElementById("nameInput").value.trim();
   const url = document.getElementById("wishlistUrl").value.trim();
   const status = document.getElementById("wishlistStatus");
 
   if (!name) {
-    status.textContent = "Please enter your name in the box above first.";
+    status.textContent = "Please enter your name above first.";
     return;
   }
   const person = family.find(n => n.toLowerCase() === name.toLowerCase());
@@ -184,9 +205,8 @@ document.getElementById("saveWishlistBtn").onclick = async () => {
   try {
     await db.collection("wishlists").doc(person).set({ url });
     status.textContent = "Wishlist saved! 🎁";
-    setTimeout(() => {
-      document.getElementById("wishlist-section").style.display = "none";
-    }, 1000);
+    document.getElementById("viewLink").href = url;
+    document.getElementById("viewMyWishlist").style.display = "block";
   } catch (e) {
     status.textContent = "Error saving. Check your connection.";
     console.error(e);
@@ -249,7 +269,6 @@ async function showResult(person, target) {
   }
 
   document.getElementById("draw-section").style.display = "none";
-  document.getElementById("wishlist-section").style.display = "none";
   document.getElementById("result").style.display = "block";
 }
 
