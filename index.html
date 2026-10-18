@@ -74,7 +74,7 @@
   .big { 
     font-size: clamp(2.8em, 10vw, 4.6em); 
     font-weight: bold; 
-    margin: 15px 0 25px; 
+    margin: 10px 0 20px; 
     text-shadow: 0 0 15px #ffd700; 
     color: #fffde7;
   }
@@ -250,17 +250,26 @@ async function showResult(person, target) {
 
   const wishDoc = await db.collection("wishlists").doc(target).get();
   const wishlistDiv = document.getElementById("targetWishlist");
+  const baseUrl = window.location.origin + window.location.pathname;
 
   if (wishDoc.exists && wishDoc.data().url) {
     wishlistDiv.innerHTML = `
       <a href="${wishDoc.data().url}" target="_blank" 
-         style="display:inline-block; margin-top:10px; font-size:1.6em; background:#fff; color:#c62828; 
+         style="display:inline-block; margin-top:5px; font-size:1.6em; background:#fff; color:#c62828; 
                 padding:16px 28px; border-radius:14px; text-decoration:none; font-weight:bold;">
         Open Their Wishlist →
       </a>
     `;
   } else {
-    wishlistDiv.innerHTML = `<p style="margin-top:15px; font-size:1.15em;">They haven't added a wishlist yet.</p>`;
+    const theirLink = baseUrl + "?person=" + encodeURIComponent(target);
+    wishlistDiv.innerHTML = `
+      <p style="margin-top:10px; font-size:1.15em;">They haven't created a wishlist yet.</p>
+      <a href="${theirLink}" target="_blank" 
+         style="display:inline-block; margin-top:12px; font-size:1.3em; background:#fff8e1; color:#1a5c2e; 
+                padding:12px 20px; border-radius:12px; text-decoration:none; font-weight:bold;">
+        Nag Them to Create One →
+      </a>
+    `;
   }
 
   document.getElementById("draw-section").style.display = "none";
