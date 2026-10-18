@@ -182,9 +182,13 @@ document.getElementById("saveWishlistBtn").onclick = async () => {
   }
 
   try {
-    await db.collection("wishlists").doc(person).set({ url });
-    status.textContent = "Wishlist saved! 🎁";
-  } catch (e) {
+  await db.collection("wishlists").doc(person).set({ url });
+  status.textContent = "Wishlist saved! 🎁";
+  // Hide the wishlist section after a short delay
+  setTimeout(() => {
+    document.querySelector(".card").style.display = "none";
+  }, 1200);
+} catch (e) {
     status.textContent = "Error saving. Check your connection.";
     console.error(e);
   }
