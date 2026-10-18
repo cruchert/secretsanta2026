@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Family Secret Santa 2026</title>
+<title>Family Secret Santa 2025</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
@@ -100,24 +100,21 @@
   }
   #result { display: none; }
   #viewMyWishlist { display: none; margin-top: 15px; }
+  #draw-section { display: none; }
 </style>
 </head>
 <body>
 
-<h1>Secret Santa 2026</h1>
+<h1>Secret Santa 2025</h1>
+<p class="subtitle" id="greeting">One link for the whole family 🎄</p>
 
 <!-- Draw Section -->
 <div class="card" id="draw-section">
-  <h2>Draw Your Person</h2>
-  <p>Type your name exactly as it appears:</p>
-  <input type="text" id="nameInput" placeholder="e.g. Grandma Lisa" autocomplete="off">
+  <h2 id="drawTitle">Draw Your Person</h2>
   <button id="drawBtn">Draw My Person!</button>
-  <p class="status"><strong>Names:</strong><br>
-    Kylie • Kendra • Kaedynce • Rylee • Marin • Ellie • Zeke • Rayne • Drea • Brandon • Grandma Lisa • Grandma Chris • Roberto • Diego • Nicholas • JJ
-  </p>
 </div>
 
-<!-- Wishlist Section (stays available) -->
+<!-- Wishlist Section -->
 <div class="card" id="wishlist-section">
   <h2>Your Wishlist</h2>
   <p>Add or update your Amazon or GoWish link so people know what to get you.</p>
@@ -143,7 +140,6 @@
   <p style="font-size:1.6em; margin-top:20px;">Keep it secret!<br>Merry Christmas 🎅</p>
 </div>
 
-<!-- Testing Reset -->
 <button class="reset-btn" id="resetBtn">RESET ALL (Testing)</button>
 
 <script>
@@ -164,85 +160,88 @@ const family = [
   "Drea","Brandon","Grandma Lisa","Grandma Chris","Roberto","Diego","Nicholas","JJ"
 ];
 
-// Check if user already has a wishlist when they type their name
-document.getElementById("nameInput").addEventListener("blur", async () => {
-  const name = document.getElementById("nameInput").value.trim();
-  const person = family.find(n => n.toLowerCase() === name.toLowerCase());
-  if (!person) return;
+// Exclusions: people who should NOT get certain names
+const exclusions = {
+  "Kendra": ["JJ"],
+  "Roberto": ["JJ"]
+};
 
-  const doc = await db.collection("wishlists").doc(person).get();
-  const viewDiv = document.getElementById("viewMyWishlist");
-  const viewLink = document.getElementById("viewLink");
-  if (doc.exists && doc.data().url) {
-    viewLink.href = doc.data().url;
-    viewDiv.style.display = "block";
-    document.getElementById("wishlistUrl").value = doc.data().url;
-  } else {
-    viewDiv.style.display = "none";
+// Get person from URL
+const urlParams = new URLSearchParams(window.location.search);
+const personFromUrl = urlParams.get("person");
+let currentPerson = null;
+
+if (personFromUrl) {
+  currentPerson = family.find(n => n.toLowerCase() === decodeURIComponent(personFromUrl).toLowerCase());
+  if (currentPerson) {
+    document.getElementById("greeting").textContent = `Hello ${currentPerson}!`;
+    document.getElementById("drawTitle").textContent = `Draw Your Person`;
+    document.getElementById("draw-section").style.display = "block";
+    // Check existing wishlist
+    db.collection("wishlists").doc(currentPerson).get().then(doc => {
+      if (doc.exists && doc.data().url) {
+        document.getElementById("viewLink").href = doc.data().url;
+        document.getElementById("viewMyWishlist").style.display = "block";
+        document.getElementById("wishlistUrl").value = doc.data().url;
+      }
+    });
   }
-});
+}
+
+if (!currentPerson) {
+  document.getElementById("greeting").textContent = "Invalid or missing link. Please use your personal link.";
+}
 
 document.getElementById("saveWishlistBtn").onclick = async () => {
-  const name = document.getElementById("nameInput").value.trim();
+  if (!currentPerson) return;
   const url = document.getElementById("wishlistUrl").value.trim();
   const status = document.getElementById("wishlistStatus");
 
-  if (!name) {
-    status.textContent = "Please enter your name above first.";
-    return;
-  }
-  const person = family.find(n => n.toLowerCase() === name.toLowerCase());
-  if (!person) {
-    status.textContent = "Name not recognized. Check spelling.";
-    return;
-  }
   if (!url || !url.startsWith("http")) {
     status.textContent = "Please paste a valid link.";
     return;
   }
 
   try {
-    await db.collection("wishlists").doc(person).set({ url });
+    await db.collection("wishlists").doc(currentPerson).set({ url });
     status.textContent = "Wishlist saved! 🎁";
     document.getElementById("viewLink").href = url;
     document.getElementById("viewMyWishlist").style.display = "block";
   } catch (e) {
-    status.textContent = "Error saving. Check your connection.";
-    console.error(e);
+    status.textContent = "Error saving.";
   }
 };
 
 document.getElementById("drawBtn").onclick = async () => {
-  const input = document.getElementById("nameInput").value.trim();
-  const person = family.find(n => n.toLowerCase() === input.toLowerCase());
-
-  if (!person) {
-    alert("Name not found — please check spelling and try again.");
-    return;
-  }
+  if (!currentPerson) return;
 
   try {
-    const myDoc = await db.collection("assignments").doc(person).get();
+    const myDoc = await db.collection("assignments").doc(currentPerson).get();
     if (myDoc.exists) {
-      await showResult(person, myDoc.data().target);
+      await showResult(currentPerson, myDoc.data().target);
       return;
     }
 
     const snapshot = await db.collection("assignments").get();
     const taken = new Set(snapshot.docs.map(d => d.data().target));
-    const available = family.filter(n => n !== person && !taken.has(n));
+
+    let available = family.filter(n => n !== currentPerson && !taken.has(n));
+
+    // Apply exclusions
+    if (exclusions[currentPerson]) {
+      available = available.filter(n => !exclusions[currentPerson].includes(n));
+    }
 
     if (available.length === 0) {
-      alert("Everyone already has a person!");
+      alert("No available people left for you!");
       return;
     }
 
     const target = available[Math.floor(Math.random() * available.length)];
-    await db.collection("assignments").doc(person).set({ target });
-    await showResult(person, target);
+    await db.collection("assignments").doc(currentPerson).set({ target });
+    await showResult(currentPerson, target);
   } catch (e) {
     alert("Something went wrong. Please try again.");
-    console.error(e);
   }
 };
 
@@ -261,7 +260,6 @@ async function showResult(person, target) {
                 padding:14px 24px; border-radius:14px; text-decoration:none; font-weight:bold;">
         Open Wishlist →
       </a>
-      <p style="margin-top:12px; font-size:0.95em; opacity:0.9;">Tap to open in browser or app</p>
     `;
   } else {
     wishlistDiv.innerHTML = `<p style="margin-top:20px; font-size:1.15em;">They haven't added a wishlist yet.</p>`;
