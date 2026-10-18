@@ -89,4 +89,199 @@
   @keyframes fall {
     0% { transform: translateY(-120px) rotate(0deg); opacity: 0; }
     12% { opacity: 1; }
-    100% { transform: translateY(120
+    100% { transform: translateY(120vh) rotate(360deg); opacity: 0.3; }
+  }
+  .status { font-size: 0.95em; margin-top: 8px; opacity: 0.95; }
+  .reset-btn {
+    position: fixed; top: 12px; right: 12px;
+    font-size: 0.85em; padding: 8px 12px;
+    background: rgba(0,0,0,0.4); color: white;
+    width: auto; z-index: 100; border-radius: 8px;
+  }
+  #result { display: none; }
+</style>
+</head>
+<body>
+
+<h1>Secret Santa 2025</h1>
+<p class="subtitle">One link for the whole family 🎄</p>
+
+<!-- Wishlist Prompt -->
+<div class="card">
+  <h2>Add Your Wishlist</h2>
+  <p>Help everyone know what to get you!</p>
+  <div class="links">
+    <a href="https://www.amazon.com/gp/registry/wishlist" target="_blank">Create Amazon Wishlist</a>
+    <a href="https://www.gowish.com/" target="_blank">Create GoWish List</a>
+  </div>
+  <p style="font-size:0.95em; margin:15px 0 5px;">Paste your Amazon or GoWish link:</p>
+  <input type="url" id="wishlistUrl" placeholder="https://...">
+  <button class="secondary" id="saveWishlistBtn">Save My Wishlist</button>
+  <div class="status" id="wishlistStatus"></div>
+</div>
+
+<!-- Draw Section -->
+<div class="card" id="draw-section">
+  <h2>Draw Your Person</h2>
+  <p>Type your name exactly as it appears:</p>
+  <input type="text" id="nameInput" placeholder="e.g. Grandma Lisa" autocomplete="off">
+  <button id="drawBtn">Draw My Person!</button>
+  <p class="status"><strong>Names:</strong><br>
+    Kylie • Kendra • Kaedynce • Rylee • Marin • Ellie • Zeke • Rayne • Drea • Brandon • Grandma Lisa • Grandma Chris • Roberto • Diego • Nicholas • JJ
+  </p>
+</div>
+
+<!-- Result -->
+<div class="card" id="result">
+  <p>Hello</p>
+  <div class="big" id="yourName"></div>
+  <p>You are buying a gift for:</p>
+  <div class="big" id="targetName"></div>
+  <div id="targetWishlist"></div>
+  <p style="font-size:1.6em; margin-top:20px;">Keep it secret!<br>Merry Christmas 🎅</p>
+</div>
+
+<!-- Testing Reset -->
+<button class="reset-btn" id="resetBtn">RESET ALL (Testing)</button>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBA-vWzwE5wLY0rpA3-x0xIDbtGqgBIQ3I",
+  authDomain: "familysecretsanta2026-eeca1.firebaseapp.com",
+  projectId: "familysecretsanta2026-eeca1",
+  storageBucket: "familysecretsanta2026-eeca1.firebasestorage.app",
+  messagingSenderId: "679113539709",
+  appId: "1:679113539709:web:324f4ee66f4c1a884db114"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const family = [
+  "Kylie","Kendra","Kaedynce","Rylee","Marin","Ellie","Zeke","Rayne",
+  "Drea","Brandon","Grandma Lisa","Grandma Chris","Roberto","Diego","Nicholas","JJ"
+];
+
+document.getElementById("saveWishlistBtn").onclick = async () => {
+  const name = document.getElementById("nameInput").value.trim();
+  const url = document.getElementById("wishlistUrl").value.trim();
+  const status = document.getElementById("wishlistStatus");
+
+  if (!name) {
+    status.textContent = "Please enter your name in the box below first.";
+    return;
+  }
+  const person = family.find(n => n.toLowerCase() === name.toLowerCase());
+  if (!person) {
+    status.textContent = "Name not recognized. Check spelling.";
+    return;
+  }
+  if (!url || !url.startsWith("http")) {
+    status.textContent = "Please paste a valid link.";
+    return;
+  }
+
+  try {
+    await db.collection("wishlists").doc(person).set({ url });
+    status.textContent = "Wishlist saved! 🎁";
+  } catch (e) {
+    status.textContent = "Error saving. Check your connection.";
+    console.error(e);
+  }
+};
+
+document.getElementById("drawBtn").onclick = async () => {
+  const input = document.getElementById("nameInput").value.trim();
+  const person = family.find(n => n.toLowerCase() === input.toLowerCase());
+
+  if (!person) {
+    alert("Name not found — please check spelling and try again.");
+    return;
+  }
+
+  try {
+    const myDoc = await db.collection("assignments").doc(person).get();
+    if (myDoc.exists) {
+      await showResult(person, myDoc.data().target);
+      return;
+    }
+
+    const snapshot = await db.collection("assignments").get();
+    const taken = new Set(snapshot.docs.map(d => d.data().target));
+    const available = family.filter(n => n !== person && !taken.has(n));
+
+    if (available.length === 0) {
+      alert("Everyone already has a person!");
+      return;
+    }
+
+    const target = available[Math.floor(Math.random() * available.length)];
+    await db.collection("assignments").doc(person).set({ target });
+    await showResult(person, target);
+  } catch (e) {
+    alert("Something went wrong. Please try again.");
+    console.error(e);
+  }
+};
+
+async function showResult(person, target) {
+  document.getElementById("yourName").textContent = person;
+  document.getElementById("targetName").textContent = target;
+
+  const wishDoc = await db.collection("wishlists").doc(target).get();
+  const wishlistDiv = document.getElementById("targetWishlist");
+  if (wishDoc.exists && wishDoc.data().url) {
+    wishlistDiv.innerHTML = `<p style="margin-top:20px;"><a href="${wishDoc.data().url}" target="_blank" style="font-size:1.4em; background:#fff; color:#c62828; padding:12px 20px; border-radius:12px; text-decoration:none; display:inline-block;">View Their Wishlist →</a></p>`;
+  } else {
+    wishlistDiv.innerHTML = `<p style="margin-top:15px; font-size:1.1em;">They haven't added a wishlist yet.</p>`;
+  }
+
+  document.getElementById("draw-section").style.display = "none";
+  document.getElementById("result").style.display = "block";
+}
+
+document.getElementById("resetBtn").onclick = async () => {
+  if (!confirm("Clear ALL assignments and wishlists? (Only for testing)")) return;
+  try {
+    const assignments = await db.collection("assignments").get();
+    const wishlists = await db.collection("wishlists").get();
+    const batch = db.batch();
+    assignments.forEach(doc => batch.delete(doc.ref));
+    wishlists.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    alert("All data cleared! Refresh the page.");
+    location.reload();
+  } catch (e) {
+    alert("Reset failed.");
+  }
+};
+
+// Falling Christmas graphics — full page, continues while scrolling
+const graphics = [
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f384.svg", // tree
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f385.svg", // santa
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f98c.svg", // reindeer
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2603.svg",  // snowman
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2744.svg",  // snowflake
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36c.svg", // candy cane
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f381.svg", // gift
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f514.svg", // bell
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f381.svg", // extra gift
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f381.svg"  // extra gift
+];
+
+setInterval(() => {
+  if (Math.random() < 0.7) {
+    const img = document.createElement("img");
+    img.src = graphics[Math.floor(Math.random() * graphics.length)];
+    img.className = "falling";
+    img.style.left = Math.random() * 100 + "vw";
+    img.style.width = (32 + Math.random() * 40) + "px";
+    img.style.animationDuration = (6 + Math.random() * 7) + "s";
+    document.body.appendChild(img);
+    setTimeout(() => img.remove(), 16000);
+  }
+}, 380);
+</script>
+</body>
+</html>
