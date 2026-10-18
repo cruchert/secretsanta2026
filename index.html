@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Family Secret Santa 2025</title>
+<title>Family Secret Santa 2026</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
@@ -72,9 +72,9 @@
     opacity: 0.85;
   }
   .big { 
-    font-size: clamp(2.6em, 9vw, 4.4em); 
+    font-size: clamp(2.8em, 10vw, 4.6em); 
     font-weight: bold; 
-    margin: 18px 0; 
+    margin: 15px 0 25px; 
     text-shadow: 0 0 15px #ffd700; 
     color: #fffde7;
   }
@@ -110,7 +110,7 @@
 </head>
 <body>
 
-<h1>Secret Santa 2025</h1>
+<h1>Secret Santa 2026</h1>
 <p class="subtitle" id="greeting">One link for the whole family 🎄</p>
 
 <!-- Draw Section -->
@@ -137,12 +137,10 @@
 
 <!-- Result -->
 <div class="card" id="result">
-  <p>Hello</p>
-  <div class="big" id="yourName"></div>
   <p>You are buying a gift for:</p>
   <div class="big" id="targetName"></div>
   <div id="targetWishlist"></div>
-  <p style="font-size:1.6em; margin-top:20px;">Keep it secret!<br>Merry Christmas 🎅</p>
+  <p style="font-size:1.6em; margin-top:30px;">Keep it secret!<br>Merry Christmas 🎅</p>
 </div>
 
 <button class="reset-btn" id="resetBtn">RESET ALL (Testing)</button>
@@ -248,7 +246,6 @@ document.getElementById("drawBtn").onclick = async () => {
 };
 
 async function showResult(person, target) {
-  document.getElementById("yourName").textContent = person;
   document.getElementById("targetName").textContent = target;
 
   const wishDoc = await db.collection("wishlists").doc(target).get();
@@ -257,16 +254,17 @@ async function showResult(person, target) {
   if (wishDoc.exists && wishDoc.data().url) {
     wishlistDiv.innerHTML = `
       <a href="${wishDoc.data().url}" target="_blank" 
-         style="display:inline-block; margin-top:15px; font-size:1.6em; background:#fff; color:#c62828; 
+         style="display:inline-block; margin-top:10px; font-size:1.6em; background:#fff; color:#c62828; 
                 padding:16px 28px; border-radius:14px; text-decoration:none; font-weight:bold;">
         Open Their Wishlist →
       </a>
     `;
   } else {
-    wishlistDiv.innerHTML = `<p style="margin-top:20px; font-size:1.15em;">They haven't added a wishlist yet.</p>`;
+    wishlistDiv.innerHTML = `<p style="margin-top:15px; font-size:1.15em;">They haven't added a wishlist yet.</p>`;
   }
 
   document.getElementById("draw-section").style.display = "none";
+  document.getElementById("wishlist-section").style.display = "none";
   document.getElementById("result").style.display = "block";
 }
 
