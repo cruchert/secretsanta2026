@@ -103,15 +103,29 @@
     background: rgba(0,0,0,0.4); color: white;
     width: auto; z-index: 100; border-radius: 8px;
   }
-  #result { display: none; }
+  #result, #organizer-view { display: none; }
   #viewMyWishlist { display: none; margin-top: 18px; }
   #draw-section { display: none; }
+  .person-row { 
+    text-align: left; 
+    padding: 10px 0; 
+    border-bottom: 1px solid rgba(255,255,255,0.2); 
+    font-size: 1.15em;
+  }
+  .has-list { color: #a5d6a7; }
+  .no-list { color: #ffcc80; }
 </style>
 </head>
 <body>
 
 <h1>Secret Santa 2026</h1>
 <p class="subtitle" id="greeting">One link for the whole family 🎄</p>
+
+<!-- Organizer View -->
+<div class="card" id="organizer-view">
+  <h2>Wishlist Status</h2>
+  <div id="organizerList"></div>
+</div>
 
 <!-- Draw Section -->
 <div class="card" id="draw-section">
@@ -160,7 +174,7 @@ const db = firebase.firestore();
 
 const family = [
   "Kylie","Kendra","Kaedynce","Rylee","Marin","Ellie","Zeke","Rayne",
-  "Drea","Brandon","Grandma Lisa","Grandma Chris","Roberto","Diego","Nicholas","JJ"
+  "Drea","Brandon","Lisa","Chris","Roberto","Diego","Nicholas","JJ"
 ];
 
 const exclusions = {
@@ -170,9 +184,15 @@ const exclusions = {
 
 const urlParams = new URLSearchParams(window.location.search);
 const personFromUrl = urlParams.get("person");
+const isOrganizer = urlParams.get("view") === "organizer";
 let currentPerson = null;
 
-if (personFromUrl) {
+if (isOrganizer) {
+  document.getElementById("greeting").textContent = "Organizer View";
+  document.getElementById("organizer-view").style.display = "block";
+  document.getElementById("wishlist-section").style.display = "none";
+  loadOrganizerView();
+} else if (personFromUrl) {
   currentPerson = family.find(n => n.toLowerCase() === decodeURIComponent(personFromUrl).toLowerCase());
   if (currentPerson) {
     document.getElementById("greeting").textContent = `Hello ${currentPerson}!`;
@@ -188,8 +208,25 @@ if (personFromUrl) {
   }
 }
 
-if (!currentPerson) {
+if (!currentPerson && !isOrganizer) {
   document.getElementById("greeting").textContent = "Invalid or missing link. Please use your personal link.";
+}
+
+async function loadOrganizerView() {
+  const snapshot = await db.collection("wishlists").get();
+  const hasWishlist = new Set(snapshot.docs.map(doc => doc.id));
+  const listDiv = document.getElementById("organizerList");
+  let html = "";
+
+  family.forEach(name => {
+    if (hasWishlist.has(name)) {
+      html += `<div class="person-row has-list">✓ ${name} — has wishlist</div>`;
+    } else {
+      html += `<div class="person-row no-list">○ ${name} — missing wishlist</div>`;
+    }
+  });
+
+  listDiv.innerHTML = html || "<p>No data yet.</p>";
 }
 
 document.getElementById("saveWishlistBtn").onclick = async () => {
@@ -250,7 +287,6 @@ async function showResult(person, target) {
 
   const wishDoc = await db.collection("wishlists").doc(target).get();
   const wishlistDiv = document.getElementById("targetWishlist");
-  const baseUrl = window.location.origin + window.location.pathname;
 
   if (wishDoc.exists && wishDoc.data().url) {
     wishlistDiv.innerHTML = `
@@ -261,15 +297,7 @@ async function showResult(person, target) {
       </a>
     `;
   } else {
-    const theirLink = baseUrl + "?person=" + encodeURIComponent(target);
-    wishlistDiv.innerHTML = `
-      <p style="margin-top:10px; font-size:1.15em;">They haven't created a wishlist yet.</p>
-      <a href="${theirLink}" target="_blank" 
-         style="display:inline-block; margin-top:12px; font-size:1.3em; background:#fff8e1; color:#1a5c2e; 
-                padding:12px 20px; border-radius:12px; text-decoration:none; font-weight:bold;">
-        Nag Them to Create One →
-      </a>
-    `;
+    wishlistDiv.innerHTML = `<p style="margin-top:10px; font-size:1.15em;">They haven't created a wishlist yet.</p>`;
   }
 
   document.getElementById("draw-section").style.display = "none";
