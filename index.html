@@ -233,10 +233,19 @@ async function showResult(person, target) {
 
   const wishDoc = await db.collection("wishlists").doc(target).get();
   const wishlistDiv = document.getElementById("targetWishlist");
+
   if (wishDoc.exists && wishDoc.data().url) {
-    wishlistDiv.innerHTML = `<p style="margin-top:20px;"><a href="${wishDoc.data().url}" target="_blank" style="font-size:1.4em; background:#fff; color:#c62828; padding:12px 20px; border-radius:12px; text-decoration:none; display:inline-block;">View Their Wishlist →</a></p>`;
+    wishlistDiv.innerHTML = `
+      <p style="margin-top:25px; font-size:1.2em;">Their wishlist:</p>
+      <a href="${wishDoc.data().url}" target="_blank" 
+         style="display:inline-block; margin-top:10px; font-size:1.5em; background:#fff; color:#c62828; 
+                padding:14px 24px; border-radius:14px; text-decoration:none; font-weight:bold;">
+        Open Wishlist →
+      </a>
+      <p style="margin-top:12px; font-size:0.95em; opacity:0.9;">Tap to open in browser or app</p>
+    `;
   } else {
-    wishlistDiv.innerHTML = `<p style="margin-top:15px; font-size:1.1em;">They haven't added a wishlist yet.</p>`;
+    wishlistDiv.innerHTML = `<p style="margin-top:20px; font-size:1.15em;">They haven't added a wishlist yet.</p>`;
   }
 
   document.getElementById("draw-section").style.display = "none";
