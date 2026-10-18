@@ -66,6 +66,11 @@
   }
   button:active { transform: translateY(2px); }
   .secondary { background: #fff8e1; color: #1a5c2e; }
+  .small-btn {
+    font-size: 1em !important;
+    padding: 10px !important;
+    opacity: 0.85;
+  }
   .big { 
     font-size: clamp(2.6em, 9vw, 4.4em); 
     font-weight: bold; 
@@ -99,7 +104,7 @@
     width: auto; z-index: 100; border-radius: 8px;
   }
   #result { display: none; }
-  #viewMyWishlist { display: none; margin-top: 15px; }
+  #viewMyWishlist { display: none; margin-top: 18px; }
   #draw-section { display: none; }
 </style>
 </head>
@@ -110,7 +115,7 @@
 
 <!-- Draw Section -->
 <div class="card" id="draw-section">
-  <h2 id="drawTitle">Draw Your Person</h2>
+  <h2>Draw Your Person</h2>
   <button id="drawBtn">Draw My Person!</button>
 </div>
 
@@ -126,7 +131,7 @@
   <button class="secondary" id="saveWishlistBtn">Save / Update My Wishlist</button>
   <div class="status" id="wishlistStatus"></div>
   <div id="viewMyWishlist">
-    <a id="viewLink" href="#" target="_blank" style="display:inline-block; margin-top:10px; font-size:1.4em; background:#fff; color:#c62828; padding:12px 20px; border-radius:12px; text-decoration:none; font-weight:bold;">View Your Wishlist →</a>
+    <a id="viewLink" href="#" target="_blank" style="display:inline-block; font-size:1.6em; background:#fff; color:#c62828; padding:16px 28px; border-radius:14px; text-decoration:none; font-weight:bold;">View Your Wishlist →</a>
   </div>
 </div>
 
@@ -160,13 +165,11 @@ const family = [
   "Drea","Brandon","Grandma Lisa","Grandma Chris","Roberto","Diego","Nicholas","JJ"
 ];
 
-// Exclusions: people who should NOT get certain names
 const exclusions = {
   "Kendra": ["JJ"],
   "Roberto": ["JJ"]
 };
 
-// Get person from URL
 const urlParams = new URLSearchParams(window.location.search);
 const personFromUrl = urlParams.get("person");
 let currentPerson = null;
@@ -175,14 +178,13 @@ if (personFromUrl) {
   currentPerson = family.find(n => n.toLowerCase() === decodeURIComponent(personFromUrl).toLowerCase());
   if (currentPerson) {
     document.getElementById("greeting").textContent = `Hello ${currentPerson}!`;
-    document.getElementById("drawTitle").textContent = `Draw Your Person`;
     document.getElementById("draw-section").style.display = "block";
-    // Check existing wishlist
     db.collection("wishlists").doc(currentPerson).get().then(doc => {
       if (doc.exists && doc.data().url) {
         document.getElementById("viewLink").href = doc.data().url;
         document.getElementById("viewMyWishlist").style.display = "block";
         document.getElementById("wishlistUrl").value = doc.data().url;
+        document.getElementById("saveWishlistBtn").classList.add("small-btn");
       }
     });
   }
@@ -207,6 +209,7 @@ document.getElementById("saveWishlistBtn").onclick = async () => {
     status.textContent = "Wishlist saved! 🎁";
     document.getElementById("viewLink").href = url;
     document.getElementById("viewMyWishlist").style.display = "block";
+    document.getElementById("saveWishlistBtn").classList.add("small-btn");
   } catch (e) {
     status.textContent = "Error saving.";
   }
@@ -227,7 +230,6 @@ document.getElementById("drawBtn").onclick = async () => {
 
     let available = family.filter(n => n !== currentPerson && !taken.has(n));
 
-    // Apply exclusions
     if (exclusions[currentPerson]) {
       available = available.filter(n => !exclusions[currentPerson].includes(n));
     }
@@ -254,11 +256,10 @@ async function showResult(person, target) {
 
   if (wishDoc.exists && wishDoc.data().url) {
     wishlistDiv.innerHTML = `
-      <p style="margin-top:25px; font-size:1.2em;">Their wishlist:</p>
       <a href="${wishDoc.data().url}" target="_blank" 
-         style="display:inline-block; margin-top:10px; font-size:1.5em; background:#fff; color:#c62828; 
-                padding:14px 24px; border-radius:14px; text-decoration:none; font-weight:bold;">
-        Open Wishlist →
+         style="display:inline-block; margin-top:15px; font-size:1.6em; background:#fff; color:#c62828; 
+                padding:16px 28px; border-radius:14px; text-decoration:none; font-weight:bold;">
+        Open Their Wishlist →
       </a>
     `;
   } else {
