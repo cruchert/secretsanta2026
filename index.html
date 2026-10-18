@@ -106,8 +106,19 @@
 <h1>Secret Santa 2025</h1>
 <p class="subtitle">One link for the whole family 🎄</p>
 
-<!-- Wishlist Prompt -->
-<div class="card">
+<!-- Draw Section (now first) -->
+<div class="card" id="draw-section">
+  <h2>Draw Your Person</h2>
+  <p>Type your name exactly as it appears:</p>
+  <input type="text" id="nameInput" placeholder="e.g. Grandma Lisa" autocomplete="off">
+  <button id="drawBtn">Draw My Person!</button>
+  <p class="status"><strong>Names:</strong><br>
+    Kylie • Kendra • Kaedynce • Rylee • Marin • Ellie • Zeke • Rayne • Drea • Brandon • Grandma Lisa • Grandma Chris • Roberto • Diego • Nicholas • JJ
+  </p>
+</div>
+
+<!-- Wishlist Prompt (now second) -->
+<div class="card" id="wishlist-section">
   <h2>Add Your Wishlist</h2>
   <p>Help everyone know what to get you!</p>
   <div class="links">
@@ -118,17 +129,6 @@
   <input type="url" id="wishlistUrl" placeholder="https://...">
   <button class="secondary" id="saveWishlistBtn">Save My Wishlist</button>
   <div class="status" id="wishlistStatus"></div>
-</div>
-
-<!-- Draw Section -->
-<div class="card" id="draw-section">
-  <h2>Draw Your Person</h2>
-  <p>Type your name exactly as it appears:</p>
-  <input type="text" id="nameInput" placeholder="e.g. Grandma Lisa" autocomplete="off">
-  <button id="drawBtn">Draw My Person!</button>
-  <p class="status"><strong>Names:</strong><br>
-    Kylie • Kendra • Kaedynce • Rylee • Marin • Ellie • Zeke • Rayne • Drea • Brandon • Grandma Lisa • Grandma Chris • Roberto • Diego • Nicholas • JJ
-  </p>
 </div>
 
 <!-- Result -->
@@ -168,7 +168,7 @@ document.getElementById("saveWishlistBtn").onclick = async () => {
   const status = document.getElementById("wishlistStatus");
 
   if (!name) {
-    status.textContent = "Please enter your name in the box below first.";
+    status.textContent = "Please enter your name in the box above first.";
     return;
   }
   const person = family.find(n => n.toLowerCase() === name.toLowerCase());
@@ -182,13 +182,12 @@ document.getElementById("saveWishlistBtn").onclick = async () => {
   }
 
   try {
-  await db.collection("wishlists").doc(person).set({ url });
-  status.textContent = "Wishlist saved! 🎁";
-  // Hide the wishlist section after a short delay
-  setTimeout(() => {
-    document.querySelector(".card").style.display = "none";
-  }, 1200);
-} catch (e) {
+    await db.collection("wishlists").doc(person).set({ url });
+    status.textContent = "Wishlist saved! 🎁";
+    setTimeout(() => {
+      document.getElementById("wishlist-section").style.display = "none";
+    }, 1000);
+  } catch (e) {
     status.textContent = "Error saving. Check your connection.";
     console.error(e);
   }
@@ -241,6 +240,7 @@ async function showResult(person, target) {
   }
 
   document.getElementById("draw-section").style.display = "none";
+  document.getElementById("wishlist-section").style.display = "none";
   document.getElementById("result").style.display = "block";
 }
 
@@ -260,18 +260,17 @@ document.getElementById("resetBtn").onclick = async () => {
   }
 };
 
-// Falling Christmas graphics — full page, continues while scrolling
 const graphics = [
-  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f384.svg", // tree
-  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f385.svg", // santa
-  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f98c.svg", // reindeer
-  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2603.svg",  // snowman
-  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2744.svg",  // snowflake
-  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36c.svg", // candy cane
-  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f381.svg", // gift
-  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f514.svg", // bell
-  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f381.svg", // extra gift
-  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f381.svg"  // extra gift
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f384.svg",
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f385.svg",
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f98c.svg",
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2603.svg",
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2744.svg",
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36c.svg",
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f381.svg",
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f514.svg",
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f381.svg",
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f381.svg"
 ];
 
 setInterval(() => {
