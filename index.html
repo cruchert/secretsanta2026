@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Secret Santa 2025</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #8B0000 url('https://images.unsplash.com/photo-1543589077-57900d262eeb?auto=format&fit=crop&w=1920&q=80') center/cover fixed;
+    color: white;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px 15px 40px;
+    box-sizing: border-box;
+    position: relative;
+    overflow-x: hidden;
+  }
+  h1 { font-size: clamp(2.2em, 6vw, 3.6em); text-shadow: 0 0 25px gold; margin: 10px 0 5px; z-index: 10; }
+  .subtitle { font-size: 1.2em; margin-bottom: 20px; z-index: 10; }
+  .card {
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(6px);
+    border-radius: 20px;
+    padding: 25px 20px;
+    margin: 15px 0;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 10;
+  }
+  input, button {
+    width: 100%;
+    max-width: 380px;
+    padding: 16px;
+    font-size: 1.3em;
+    border-radius: 14px;
+    border: none;
+    margin: 10px auto;
+    display: block;
+    box-sizing: border-box;
+  }
+  button {
+    background: #fff;
+    color: #c00;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+  }
+  button:active { transform: translateY(3px); }
+  .secondary { background: #eee; color: #333; font-size: 1.1em; }
+  .big { font-size: clamp(2.5em, 8vw, 4.2em); font-weight: bold; margin: 20px 0; text-shadow: 0 0 20px gold; }
+  a { color: #ffeb3b; text-decoration: underline; }
+  .links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 10px 0; }
+  .links a { 
+    background: #fff; color: #c00; padding: 10px 16px; border-radius: 10px; 
+    text-decoration: none; font-weight: bold; font-size: 1em;
+  }
+  .falling {
+    position: absolute;
+    pointer-events: none;
+    animation: fall linear forwards;
+    z-index: 5;
+    user-select: none;
+  }
+  @keyframes fall {
+    0% { transform: translateY(-100px) rotate(0deg); opacity: 0; }
+    15% { opacity: 1; }
+    100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+  }
+  .status { font-size: 0.95em; margin-top: 8px; opacity: 0.9; }
+  .reset-btn {
+    position: fixed; top: 10px; right: 10px;
+    font-size: 0.85em; padding: 8px 12px;
+    background: rgba(0,0,0,0.6); color: white;
+    width: auto; z-index: 100;
+  }
+  #result { display: none; }
+</style>
+</head>
+<body>
+
+<h1>Secret Santa 2025</h1>
+<p class="subtitle">One link for the whole family 🎄</p>
+
+<!-- Wishlist Prompt -->
+<div class="card">
+  <h2>Add Your Wishlist</h2>
+  <p>Help everyone know what to get you! Create a list or paste an existing one.</p>
+  <div class="links">
+    <a href="https://www.amazon.com/gp/registry/wishlist" target="_blank">Create Amazon Wishlist</a>
+    <a href="https://www.gowish.com/" target="_blank">Create GoWish List</a>
+  </div>
+  <p style="font-size:0.95em; margin:15px 0 5px;">Paste your Amazon or GoWish link below:</p>
+  <input type="url" id="wishlistUrl" placeholder="https://...">
+  <button class="secondary" id="saveWishlistBtn">Save My Wishlist</button>
+  <div class="status" id="wishlistStatus"></div>
+</div>
+
+<!-- Draw Section -->
+<div class="card" id="draw-section">
+  <h2>Draw Your Person</h2>
+  <p>Type your name exactly as it appears:</p>
+  <input type="text" id="nameInput" placeholder="e.g. Grandma Lisa" autocomplete="off">
+  <button id="drawBtn">Draw My Person!</button>
+  <p class="status"><strong>Names:</strong><br>
+    Kylie • Kendra • Kaedynce • Rylee • Marin • Ellie • Zeke • Rayne • Drea • Brandon • Grandma Lisa • Grandma Chris • Roberto • Diego • Nicholas • JJ
+  </p>
+</div>
+
+<!-- Result -->
+<div class="card" id="result">
+  <p>Hello</p>
+  <div class="big" id="yourName"></div>
+  <p>You are buying a gift for:</p>
+  <div class="big" id="targetName"></div>
+  <div id="targetWishlist"></div>
+  <p style="font-size:1.6em; margin-top:20px;">Keep it secret!<br>Merry Christmas 🎅</p>
+</div>
+
+<!-- Testing Reset (delete this button before going live) -->
+<button class="reset-btn" id="resetBtn">RESET ALL (Testing)</button>
+
+<script>
+// Your real Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyBA-vWzwE5wLY0rpA3-x0xIDbtGqgBIQ3I",
+  authDomain: "familysecretsanta2026-eeca1.firebaseapp.com",
+  projectId: "familysecretsanta2026-eeca1",
+  storageBucket: "familysecretsanta2026-eeca1.firebasestorage.app",
+  messagingSenderId: "679113539709",
+  appId: "1:679113539709:web:324f4ee66f4c1a884db114"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const family = [
+  "Kylie","Kendra","Kaedynce","Rylee","Marin","Ellie","Zeke","Rayne",
+  "Drea","Brandon","Grandma Lisa","Grandma Chris","Roberto","Diego","Nicholas","JJ"
+];
+
+// Save wishlist
+document.getElementById("saveWishlistBtn").onclick = async () => {
+  const name = document.getElementById("nameInput").value.trim();
+  const url = document.getElementById("wishlistUrl").value.trim();
+  const status = document.getElementById("wishlistStatus");
+
+  if (!name) {
+    status.textContent = "Please enter your name in the box below first.";
+    return;
+  }
+  const person = family.find(n => n.toLowerCase() === name.toLowerCase());
+  if (!person) {
+    status.textContent = "Name not recognized. Check spelling.";
+    return;
+  }
+  if (!url || !url.startsWith("http")) {
+    status.textContent = "Please paste a valid link.";
+    return;
+  }
+
+  try {
+    await db.collection("wishlists").doc(person).set({ url });
+    status.textContent = "Wishlist saved! 🎁";
+  } catch (e) {
+    status.textContent = "Error saving. Check your connection.";
+    console.error(e);
+  }
+};
+
+// Draw person
+document.getElementById("drawBtn").onclick = async () => {
+  const input = document.getElementById("nameInput").value.trim();
+  const person = family.find(n => n.toLowerCase() === input.toLowerCase());
+
+  if (!person) {
+    alert("Name not found — please check spelling and try again.");
+    return;
+  }
+
+  try {
+    const myDoc = await db.collection("assignments").doc(person).get();
+    if (myDoc.exists) {
+      const target = myDoc.data().target;
+      await showResult(person, target);
+      return;
+    }
+
+    const snapshot = await db.collection("assignments").get();
+    const taken = new Set(snapshot.docs.map(d => d.data().target));
+    const available = family.filter(n => n !== person && !taken.has(n));
+
+    if (available.length === 0) {
+      alert("Everyone already has a person! All assignments are complete.");
+      return;
+    }
+
+    const target = available[Math.floor(Math.random() * available.length)];
+    await db.collection("assignments").doc(person).set({ target });
+    await showResult(person, target);
+  } catch (e) {
+    alert("Something went wrong. Please try again.");
+    console.error(e);
+  }
+};
+
+async function showResult(person, target) {
+  document.getElementById("yourName").textContent = person;
+  document.getElementById("targetName").textContent = target;
+
+  const wishDoc = await db.collection("wishlists").doc(target).get();
+  const wishlistDiv = document.getElementById("targetWishlist");
+  if (wishDoc.exists && wishDoc.data().url) {
+    wishlistDiv.innerHTML = `<p style="margin-top:20px;"><a href="${wishDoc.data().url}" target="_blank" style="font-size:1.4em; background:#fff; color:#c00; padding:12px 20px; border-radius:12px; text-decoration:none; display:inline-block;">View Their Wishlist →</a></p>`;
+  } else {
+    wishlistDiv.innerHTML = `<p style="margin-top:15px; font-size:1.1em;">They haven't added a wishlist yet.</p>`;
+  }
+
+  document.getElementById("draw-section").style.display = "none";
+  document.getElementById("result").style.display = "block";
+}
+
+// Reset button (for testing only — delete before going live)
+document.getElementById("resetBtn").onclick = async () => {
+  if (!confirm("Clear ALL assignments and wishlists? (Only for testing)")) return;
+  try {
+    const assignments = await db.collection("assignments").get();
+    const wishlists = await db.collection("wishlists").get();
+    const batch = db.batch();
+    assignments.forEach(doc => batch.delete(doc.ref));
+    wishlists.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    alert("All data cleared! Refresh the page.");
+    location.reload();
+  } catch (e) {
+    alert("Reset failed. Check Firebase rules.");
+  }
+};
+
+// Falling Christmas graphics
+const graphics = [
+  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f384.svg",
+  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f385.svg",
+  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f98c.svg",
+  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u2603.svg",
+  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u2744.svg",
+  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f36c.svg",
+  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f381.svg",
+  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f514.svg"
+];
+
+setInterval(() => {
+  if (Math.random() < 0.6) {
+    const img = document.createElement("img");
+    img.src = graphics[Math.floor(Math.random() * graphics.length)];
+    img.className = "falling";
+    img.style.left = Math.random() * 100 + "vw";
+    img.style.width = (35 + Math.random() * 45) + "px";
+    img.style.animationDuration = (5 + Math.random() * 6) + "s";
+    document.body.appendChild(img);
+    setTimeout(() => img.remove(), 14000);
+  }
+}, 450);
+</script>
+</body>
+</html>
