@@ -244,16 +244,16 @@ document.getElementById("resetBtn").onclick = async () => {
   }
 };
 
-// Falling Christmas graphics
+// Falling Christmas graphics (reliable sources)
 const graphics = [
-  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f384.svg",
-  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f385.svg",
-  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f98c.svg",
-  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u2603.svg",
-  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u2744.svg",
-  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f36c.svg",
-  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f381.svg",
-  "https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/emoji_u1f514.svg"
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f384.svg", // tree
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f385.svg", // santa
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f98c.svg", // reindeer
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2603.svg",  // snowman
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2744.svg",  // snowflake
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36c.svg", // candy cane
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f381.svg", // gift
+  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f514.svg"  // bell
 ];
 
 setInterval(() => {
@@ -268,6 +268,3 @@ setInterval(() => {
     setTimeout(() => img.remove(), 14000);
   }
 }, 450);
-</script>
-</body>
-</html>
